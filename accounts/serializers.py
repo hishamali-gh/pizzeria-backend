@@ -1,6 +1,15 @@
 from rest_framework import serializers
 
 from django.contrib.auth import get_user_model, authenticate
+from django.db import transaction, connection
+
+from django_tenants.utils import schema_context
+
+from billing.models import SubscriptionStatus
+from billing.serializers import CurrentSubscription, SubscriptionSerializer
+from tenants.models import Tenant, Domain
+from tenants.serializers import TenantSerializer
+from .models import Role
 
 
 User = get_user_model()
@@ -16,6 +25,9 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {
                 'write_only': True
+            },
+            'email': {
+                'validators': []
             }
         }
 
@@ -28,6 +40,52 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Your password inputs do not match')
         
         return attrs
+    
+
+class RegistrationSerializer(serializers.Serializer):
+    tenant = TenantSerializer()
+    user = UserSerializer()
+    subscription = SubscriptionSerializer()
+
+
+    def create(self, validated_data):
+        tenant_data = validated_data.pop('tenant')
+        user_data = validated_data.pop('user')
+        subscription_data = validated_data.pop('subscription')
+
+        subdomain = tenant_data.get('subdomain').strip().lower().replace('-', '_')
+
+        with transaction.atomic():
+            tenant = Tenant.objects.create(
+                name=tenant_data.get('name'),
+                schema_name=f"tenant_{subdomain}"
+            )
+            
+            Domain.objects.create(
+                domain=f"{subdomain}.localhost",
+                tenant=tenant,
+                is_primary=True
+            )
+
+            CurrentSubscription.objects.create(
+                tenant=tenant,
+                plan=subscription_data.get('plan'),
+                status=SubscriptionStatus.ACTIVE
+            )
+
+            with schema_context(tenant.schema_name):
+                if User.objects.filter(email=user_data['email']).exists():
+                    raise serializers.ValidationError('This email already exists')
+                
+                user_data.pop('confirm_password', None)
+                
+                user = User.objects.create_user(
+                    tenant=tenant,
+                    role=Role.ADMIN,
+                    **user_data
+                )
+            
+            return user
 
 
 class LoginSerializer(serializers.Serializer):
@@ -36,12 +94,14 @@ class LoginSerializer(serializers.Serializer):
 
     
     def validate(self, attrs):
-        email = attrs.get('email')
-        password = attrs.get('password')
+            email = attrs.get('email')
+            password = attrs.get('password')
 
-        if email and password:
+            if not email or not password:
+                raise serializers.ValidationError('Both email and password are required.')
+
             user = authenticate(
-                self.context.get('request'),
+                request=self.context.get('request'),
                 username=email,
                 password=password
             )
@@ -53,8 +113,5 @@ class LoginSerializer(serializers.Serializer):
                 raise serializers.ValidationError('This account is disabled.')
 
             attrs['user'] = user
-
-        else:
-            raise serializers.ValidationError('')
-        
-        raise serializers.ValidationError('Invalid credentials')
+            
+            return attrs

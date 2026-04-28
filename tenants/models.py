@@ -1,16 +1,23 @@
 import uuid
 
+from django_tenants.models import TenantMixin, DomainMixin
+
 from django.db import models
 
 
-class Tenant(models.Model):
+class Tenant(TenantMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     name = models.TextField()
-    subdomain = models.TextField(unique=True)
+
+    # There's also a hidden 'schema_name' field too.
 
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True) 
+    updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return self.name
+    auto_create_schema = True
+    auto_drop_schema = True
+
+
+class Domain(DomainMixin):
+    pass
