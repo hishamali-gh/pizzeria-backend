@@ -2,6 +2,9 @@ import uuid
 
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.conf import settings
+
+import pyotp
 
 from tenants.models import Tenant
 
@@ -37,13 +40,13 @@ class UserManager(BaseUserManager):
 
         if extra_fields.get('tenant') is None:
             extra_fields.setdefault('role', Role.SUPERADMIN)
-        
+
         else:
             extra_fields.setdefault('role', Role.ADMIN)
 
         return self.create_user(full_name, email, password, **extra_fields)
 
-
+# 
 class User(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -66,7 +69,36 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ['full_name']
 
 
+    # MFA CONFIG.
+
+    is_mfa_enabled = models.BooleanField(default=False)
+
+    mfa_secret = models.CharField(max_length=32, blank=True, null=True)
+
+
+    def generate_mfa_secret(self):
+        self.mfa_secret = pyotp.random_base32()
+
+        self.save()
+
+
+    def get_totp_uri(self):
+        return pyotp.totp.TOTP(self.mfa_secret).provisioning_uri(
+            name=self.email,
+            issuer_name=f"Pizzeria - {self.tenant.name}"
+        )
+
+
     def __str__(self):
         tenant_name = self.tenant.name if self.tenant else "System"
 
         return f"{self.full_name} - {tenant_name}"
+
+
+class UserTenantMapper(models.Model):
+    email = models.EmailField(unique=True)
+    tenant = models.ForeignKey(settings.TENANT_MODEL, related_name='tenant_mappings', on_delete=models.CASCADE) # The 'settings.TENANT_MODEL' option is a lazy relationship definition, since hard-coded relationship is error-prone, especially in this situation. We can also do this by the format "app_labe.ModelName" (as a string), but since we have configured it already in the settings...
+
+
+    def __str__(self):
+        return f"{self.email} - {self.tenant}"
