@@ -69,6 +69,8 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'pizzeria_backend.urls'
 
+PUBLIC_SCHEMA_URLCONF = 'pizzeria_backend.urls_public'
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

@@ -46,7 +46,7 @@ class UserManager(BaseUserManager):
 
         return self.create_user(full_name, email, password, **extra_fields)
 
-# 
+
 class User(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -85,7 +85,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     def get_totp_uri(self):
         return pyotp.totp.TOTP(self.mfa_secret).provisioning_uri(
             name=self.email,
-            issuer_name=f"Pizzeria - {self.tenant.name}"
+            issuer_name=f"Pizzeria - {self.tenant.name if self.tenant else 'System Admin'}"
         )
 
 
@@ -97,7 +97,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class UserTenantMapper(models.Model):
     email = models.EmailField(unique=True)
-    tenant = models.ForeignKey(settings.TENANT_MODEL, related_name='tenant_mappings', on_delete=models.CASCADE) # The 'settings.TENANT_MODEL' option is a lazy relationship definition, since hard-coded relationship is error-prone, especially in this situation. We can also do this by the format "app_labe.ModelName" (as a string), but since we have configured it already in the settings...
+    tenant = models.ForeignKey(settings.TENANT_MODEL, related_name='tenant_mappings', on_delete=models.CASCADE) # The 'settings.TENANT_MODEL' option is a lazy relationship definition, since hard-coded relationship is error-prone, especially in this situation. (We can also do this by the format "app_labe.ModelName" (as a string), but since we have configured it already in the settings...)
 
 
     def __str__(self):
