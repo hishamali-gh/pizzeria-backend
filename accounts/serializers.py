@@ -6,7 +6,7 @@ from django.db import transaction, connection
 from django_tenants.utils import schema_context
 
 from billing.models import SubscriptionStatus
-from billing.serializers import CurrentSubscription, SubscriptionSerializer
+from billing.serializers import CurrentSubscription, RazorpayPaymentSerializer
 from tenants.models import Tenant, Domain
 from tenants.serializers import TenantSerializer
 from .models import Role
@@ -45,13 +45,13 @@ class UserSerializer(serializers.ModelSerializer):
 class RegistrationSerializer(serializers.Serializer):
     tenant = TenantSerializer()
     user = UserSerializer()
-    subscription = SubscriptionSerializer()
+    payment = RazorpayPaymentSerializer()
 
 
     def create(self, validated_data):
         tenant_data = validated_data.pop('tenant')
         user_data = validated_data.pop('user')
-        subscription_data = validated_data.pop('subscription')
+        payment_data = validated_data.pop('payment')
 
         subdomain = tenant_data.get('subdomain').strip().lower().replace('-', '_')
 
@@ -69,7 +69,7 @@ class RegistrationSerializer(serializers.Serializer):
 
             CurrentSubscription.objects.create(
                 tenant=tenant,
-                plan=subscription_data.get('plan'),
+                plan=payment_data.get('plan'),
                 status=SubscriptionStatus.ACTIVE
             )
 

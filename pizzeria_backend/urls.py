@@ -2,5 +2,6 @@ from django.urls import path, include
 
 
 urlpatterns = [
-    path('user/', include('accounts.urls_tenant'))
+    path('auth/', include('accounts.urls')),
+    path('user/', include('accounts.urls'))
 ]

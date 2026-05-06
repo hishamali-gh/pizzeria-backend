@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-@$2ec3jcy*z4k6_#yu^9ywkge^hdz)x)gye!0f_azz0-b#(n2c
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['.localhost', '127.0.0.1', 'localhost']
 
 
 # DEFINING 'SHARED' AND 'TENANT' APPLICATIONS
@@ -40,6 +40,8 @@ SHARED_APPS = [
     'django.contrib.staticfiles',
     
     'rest_framework',
+
+    'corsheaders',
 
     'tenants',
     'billing'
@@ -57,6 +59,7 @@ TENANT_APPS = [
 INSTALLED_APPS = SHARED_APPS + [app for app in TENANT_APPS if app not in SHARED_APPS]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django_tenants.middleware.main.TenantMainMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -70,6 +73,24 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'pizzeria_backend.urls'
 
 PUBLIC_SCHEMA_URLCONF = 'pizzeria_backend.urls_public'
+
+
+# CORS CONFIG.
+
+# The industrial permission list
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+# Allow all subdomains
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^http://.*\.localhost:5173$",
+]
+
+# Allow credentials (cookies/MFA tokens) to pass through
+CORS_ALLOW_CREDENTIALS = True
+
 
 TEMPLATES = [
     {
@@ -178,3 +199,9 @@ SIMPLE_JWT = {
 
 TENANT_MODEL = 'tenants.Tenant'
 TENANT_DOMAIN_MODEL = 'tenants.Domain'
+
+
+# RAZORPAY CONFIG.
+
+RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID')
+RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET')

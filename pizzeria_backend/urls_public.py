@@ -6,7 +6,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     path('auth/', include('accounts.urls_public')),
+    path('billing/', include('billing.urls'))
 
     # path('tenants/', include('tenants.urls')),
-    # path('billing/', include('billing.urls'))
 ]
