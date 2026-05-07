@@ -21,11 +21,10 @@ class CurrentSubscription(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     tenant = models.OneToOneField(Tenant, on_delete=models.CASCADE)
-    
     plan = models.CharField(max_length=20, choices=PlanType.choices)
     status = models.CharField(max_length=20, choices=SubscriptionStatus.choices)
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
     def __str__(self):
@@ -36,7 +35,6 @@ class SubscriptionAuditLog(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     tenant = models.ForeignKey(Tenant, related_name='subscriptions', on_delete=models.CASCADE)
-
     plan = models.CharField(max_length=20, choices=PlanType.choices)
     status = models.CharField(max_length=20, choices=SubscriptionStatus.choices)
 

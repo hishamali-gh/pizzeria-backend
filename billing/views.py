@@ -16,6 +16,7 @@ from .serializers import RazorpayOrderSerializer, RazorpayPaymentSerializer
 class SubscriptionUpdateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
+
     def post(self, request):
         serializer = RazorpayPaymentSerializer(data=request.data)
 
@@ -52,7 +53,7 @@ class CreateRazorpayOrderAPIView(APIView):
 
         plan = serializer.validated_data.get('plan')
         amount = plan_amount_map.get(plan)
-        
+
         amount_in_cents = int(round(amount * 100))
 
         order_data = {
@@ -69,8 +70,6 @@ class CreateRazorpayOrderAPIView(APIView):
                 'order': razorpay_order,
                 'key_id': settings.RAZORPAY_KEY_ID
             }, status=status.HTTP_201_CREATED)
-            
+
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-

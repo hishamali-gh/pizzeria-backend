@@ -11,7 +11,7 @@ User = get_user_model()
 class TenantSerializer(serializers.ModelSerializer):
     subdomain = serializers.CharField(write_only=True)
 
-    
+
     class Meta:
         model = Tenant
         fields = ['name', 'subdomain']

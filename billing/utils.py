@@ -12,7 +12,7 @@ def verify_razorpay_signature(order_id, payment_id, signature):
     """
     # 1. Create the payload string as defined by Razorpay's protocol
     generated_signature_body = f"{order_id}|{payment_id}"
-    
+
     # 2. Hash the body using your Secret Key
     expected_signature = hmac.new(
         key=settings.RAZORPAY_KEY_SECRET.encode(),

@@ -6,12 +6,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
-from django_tenants.utils import schema_context
-
 from django.contrib.auth import get_user_model
 
 from accounts.serializers import RegistrationSerializer
-from billing.utils import verify_razorpay_signature
 
 from .serializers import LoginSerializer
 
@@ -22,6 +19,7 @@ User = get_user_model()
 class RegistrationAPIView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
+
 
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
@@ -35,10 +33,10 @@ class RegistrationAPIView(APIView):
         return Response({
             'message': 'Registration completed!',
             'data': {
-                'user': user.full_name,
-                'tenant': user.tenant.name,
-                'subdomain': user.tenant.schema_name.replace('tenant_', ''), # Let's derive the subdomain name from the schema_name, at least for now, so we can reduce another database hit (we actually fetch the subdomain name from the 'domain' field of the Domain model).
-                'plan': user.tenant.currentsubscription.plan
+                'user': user.profile.full_name,
+                'tenant': user.profile.tenant.name if user.profile.tenant else 'System',
+                'subdomain': user.profile.tenant.schema_name.replace('tenant_', '') if user.profile.tenant else 'admin', # Let's derive the subdomain name from the schema_name, at least for now, so we can reduce another database hit (we actually fetch the subdomain name from the 'domain' field of the Domain model).
+                'plan': user.profile.tenant.currentsubscription.plan
             },
             'tokens': {
                 'refresh': str(refresh),
@@ -49,6 +47,7 @@ class RegistrationAPIView(APIView):
 
 class SetUpMFAAPIView(APIView):
     permission_classes = [IsAuthenticated]
+
 
     def post(self, request):
         user = request.user
@@ -66,6 +65,7 @@ class SetUpMFAAPIView(APIView):
 
 class VerifyMFASetupAPIView(APIView):
     permission_classes = [IsAuthenticated]
+
 
     def post(self, request):
         user = request.user
@@ -87,6 +87,9 @@ class VerifyMFASetupAPIView(APIView):
 
 
 class LoginView(APIView):
+    permission_classes = [AllowAny]
+
+
     def post(self, request):
         serializer = LoginSerializer(data=request.data, context={'request': request})
 
@@ -112,10 +115,10 @@ class LoginView(APIView):
         return Response({
             'message': 'Successfully logged in!',
             'data': {
-                'user': user.full_name,
-                'tenant': user.tenant.name,
-                'subdomain': user.tenant.schema_name.replace('tenant_', ''),
-                'plan': user.tenant.currentsubscription.plan
+                'user': user.profile.full_name,
+                'tenant': user.profile.tenant.name if user.profile.tenant else 'System',
+                'subdomain': user.profile.tenant.schema_name.replace('tenant_', '') if user.profile.tenant else 'admin',
+                'plan': user.profile.tenant.currentsubscription.plan
             },
             'tokens': {
                 'refresh': str(refresh),
@@ -124,45 +127,37 @@ class LoginView(APIView):
         })
 
 
-""" class VerifyMFALoginAPIView(APIView):
+class VerifyMFALoginAPIView(APIView):
+    permission_classes = [AllowAny]
+
+
     def post(self, request):
         email = request.data.get('email')
         code = request.data.get('code')
 
         try:
-            mapping = UserTenantMapper.objects.get(email=email)
-            target_tenant = mapping.tenant
+            user = User.objects.get(email=email)
         
-        except UserTenantMapper.DoesNotExist:
-            return Response({'error': 'Identity not found'}, status=status.HTTP_400_BAD_REQUEST)
+            totp = pyotp.totp.TOTP(user.mfa_secret)
 
-        with schema_context(target_tenant.schema_name):
-            try:
-                user = User.objects.get(email=email)
+            if totp.verify(code):
+                refresh = RefreshToken.for_user(user)
 
-                if not user.is_mfa_enabled:
-                    return Response({'error': 'MFA not enabled'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({
+                    'message': 'Successfully logged in!',
+                    'data': {
+                        'user': user.profile.full_name,
+                        'tenant': user.profile.tenant.name if user.profile.tenant else 'System',
+                        'subdomain': user.profile.tenant.schema_name.replace('tenant_', '') if user.profile.tenant else 'admin',
+                        'plan': user.profile.tenant.currentsubscription.plan
+                    },
+                    'tokens': {
+                        'refresh': str(refresh),
+                        'access': str(refresh.access_token)
+                    }
+                })
+            else:
+                return Response({'error': 'Invalid security code'}, status=status.HTTP_401_UNAUTHORIZED)
 
-                totp = pyotp.totp.TOTP(user.mfa_secret)
-
-                if totp.verify(code):
-                    refresh = RefreshToken.for_user(user)
-
-                    return Response({
-                        'message': 'Successfully logged in!',
-                        'data': {
-                            'user': user.full_name,
-                            'tenant': user.tenant.name,
-                            'subdomain': user.tenant.schema_name.replace('tenant_', ''),
-                            'plan': user.tenant.currentsubscription.plan
-                        },
-                        'tokens': {
-                            'refresh': str(refresh),
-                            'access': str(refresh.access_token)
-                        }
-                    })
-                else:
-                    return Response({'error': 'Invalid security code'}, status=status.HTTP_401_UNAUTHORIZED)
-            
-            except User.DoesNotExist:
-                return Response({'error': 'User not found'}, status=status.HTTP_400_BAD_REQUEST) """
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_400_BAD_REQUEST)

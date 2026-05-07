@@ -1,10 +1,10 @@
 import uuid
 
+import pyotp
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.conf import settings
-
-import pyotp
 
 
 class UserManager(BaseUserManager):
@@ -17,6 +17,7 @@ class UserManager(BaseUserManager):
         user = self.model(email=email, **extra_fields)
 
         user.set_password(password)
+
         user.save(using=self._db)
 
         return user
@@ -56,7 +57,7 @@ class User(AbstractUser):
 
     def get_totp_uri(self):
         profile_tenant = self.profile.tenant.name if hasattr(self, 'profile') and self.profile.tenant else 'System Admin'
-        
+
         return pyotp.totp.TOTP(self.mfa_secret).provisioning_uri(
             name=self.email,
             issuer_name=f"Pizzeria - {profile_tenant}"
