@@ -1,64 +1,38 @@
 import uuid
 
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.conf import settings
 
 import pyotp
 
-from tenants.models import Tenant
-
-
-class Role(models.TextChoices):
-    SUPERADMIN = 'SUPERADMIN', 'Super Admin'
-    ADMIN = 'ADMIN', 'Admin'
-    WORKER = 'WORKER', 'Worker'
-    VIEWER = 'VIEWER', 'Viewer'
-
 
 class UserManager(BaseUserManager):
-    def create_user(self, full_name, email, password=None, **extra_fields):
+    def create_user(self, email, password=None, **extra_fields):
         if not email:
-            raise ValueError('Must provide an email address')
+            raise ValueError('Industrial operators must have a valid email.')
 
-        user = self.model(
-            full_name=full_name.strip().title(),
-            email=self.normalize_email(email),
-            **extra_fields
-        )
+        email = self.normalize_email(email)
+
+        user = self.model(email=email, **extra_fields)
 
         user.set_password(password)
-
         user.save(using=self._db)
 
         return user
 
-
-    def create_superuser(self, full_name, email, password=None, **extra_fields):
+    def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
 
-        if extra_fields.get('tenant') is None:
-            extra_fields.setdefault('role', Role.SUPERADMIN)
-
-        else:
-            extra_fields.setdefault('role', Role.ADMIN)
-
-        return self.create_user(full_name, email, password, **extra_fields)
+        return self.create_user(email, password, **extra_fields)
 
 
-class User(AbstractBaseUser, PermissionsMixin):
+class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    full_name = models.TextField()
+    username = None
     email = models.EmailField(unique=True)
-
-    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name='users', null=True)
-    role = models.CharField(max_length=20, choices=Role.choices)
-
-    is_active = models.BooleanField(default=True)
-
-    is_staff = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -66,13 +40,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['full_name']
+    REQUIRED_FIELDS = []
 
 
     # MFA CONFIG.
 
     is_mfa_enabled = models.BooleanField(default=False)
-
     mfa_secret = models.CharField(max_length=32, blank=True, null=True)
 
 
@@ -81,24 +54,31 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         self.save()
 
-
     def get_totp_uri(self):
+        profile_tenant = self.profile.tenant.name if hasattr(self, 'profile') and self.profile.tenant else 'System Admin'
+        
         return pyotp.totp.TOTP(self.mfa_secret).provisioning_uri(
             name=self.email,
-            issuer_name=f"Pizzeria - {self.tenant.name if self.tenant else 'System Admin'}"
+            issuer_name=f"Pizzeria - {profile_tenant}"
         )
 
 
     def __str__(self):
-        tenant_name = self.tenant.name if self.tenant else "System"
-
-        return f"{self.full_name} - {tenant_name}"
+        return self.email
 
 
-class UserTenantMapper(models.Model):
-    email = models.EmailField(unique=True)
-    tenant = models.ForeignKey(settings.TENANT_MODEL, related_name='tenant_mappings', on_delete=models.CASCADE) # The 'settings.TENANT_MODEL' option is a lazy relationship definition, since hard-coded relationship is error-prone, especially in this situation. (We can also do this by the format "app_labe.ModelName" (as a string), but since we have configured it already in the settings...)
+class UserProfile(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    full_name = models.TextField()
+    tenant = models.ForeignKey(settings.TENANT_MODEL, on_delete=models.CASCADE, related_name='profiles', null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
     def __str__(self):
-        return f"{self.email} - {self.tenant}"
+        tenant_name = self.tenant.name if self.tenant else 'System'
+
+        return f'{self.full_name} - {tenant_name}'

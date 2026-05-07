@@ -9,7 +9,7 @@ from billing.models import SubscriptionStatus
 from billing.serializers import CurrentSubscription, RazorpayPaymentSerializer
 from tenants.models import Tenant, Domain
 from tenants.serializers import TenantSerializer
-from .models import Role
+from employees.models import Role
 
 
 User = get_user_model()

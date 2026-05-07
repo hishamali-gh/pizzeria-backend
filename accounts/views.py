@@ -14,7 +14,6 @@ from accounts.serializers import RegistrationSerializer
 from billing.utils import verify_razorpay_signature
 
 from .serializers import LoginSerializer
-from .models import UserTenantMapper
 
 
 User = get_user_model()
@@ -125,7 +124,7 @@ class LoginView(APIView):
         })
 
 
-class VerifyMFALoginAPIView(APIView):
+""" class VerifyMFALoginAPIView(APIView):
     def post(self, request):
         email = request.data.get('email')
         code = request.data.get('code')
@@ -166,4 +165,4 @@ class VerifyMFALoginAPIView(APIView):
                     return Response({'error': 'Invalid security code'}, status=status.HTTP_401_UNAUTHORIZED)
             
             except User.DoesNotExist:
-                return Response({'error': 'User not found'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'User not found'}, status=status.HTTP_400_BAD_REQUEST) """
