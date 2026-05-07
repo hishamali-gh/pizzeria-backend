@@ -10,7 +10,7 @@ class Tenant(TenantMixin):
 
     name = models.TextField()
 
-    # There's also a hidden 'schema_name' field too.
+    # There's also a hidden field 'schema_name', too.
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
