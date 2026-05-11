@@ -44,6 +44,9 @@ SHARED_APPS = [
     
     'rest_framework',
 
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+
     'corsheaders',
 
     'accounts',
@@ -180,11 +183,11 @@ AUTH_USER_MODEL = 'accounts.User'
 
 # EXTRA CONFIGS.
 
-""" REST_FRAMEWORK = {
+REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication'
     ]
-} """
+}
 
 
 # JWT CONFIG.
@@ -192,9 +195,15 @@ AUTH_USER_MODEL = 'accounts.User'
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(seconds=10),
-    'REFRESH_TOKEN_LIFETIME': timedelta(seconds=20),
-    'AUTH_HEADER_TYPES': ['Bearer']
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(hours=12),
+
+    'AUTH_HEADER_TYPES': ['Bearer'],
+    'AUTH_COOKIE': 'access', # Matches the 'response.set_cookie' key
+    'AUTH_COOKIE_REFRESH': 'refresh', # Matches the 'response.set_cookie' key
+    'AUTH_COOKIE_HTTP_ONLY': True,
+    'AUTH_COOKIE_PATH': '/',
+    'AUTH_COOKIE_SAMESITE': 'Lax',
 }
 
 

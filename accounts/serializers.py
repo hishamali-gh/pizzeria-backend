@@ -71,7 +71,7 @@ class RegistrationSerializer(serializers.Serializer):
             ) # Tenant created
 
             Domain.objects.create(
-                domain=f"{subdomain}.localhost",
+                domain=f"{subdomain}.localhost", # ?!
                 tenant=tenant,
                 is_primary=True
             ) # Domain created
