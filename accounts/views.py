@@ -1,5 +1,7 @@
 import pyotp
 
+import datetime
+
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -52,10 +54,10 @@ class SetUpMFAAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
 
-    def post(self, request):
+    def get(self, request):
         user = request.user
 
-        if not user.is_mfa_enabled:
+        if not user.mfa_secret:
             user.generate_mfa_secret()
 
         otp_uri = user.get_totp_uri()
@@ -72,14 +74,15 @@ class VerifyMFASetupAPIView(APIView):
 
     def post(self, request):
         user = request.user
-        code = request.data.get('code')
+        code = request.data.get('code').replace(' ', '')
 
         if not code:
             return Response({'error': 'Code required'}, status=status.HTTP_400_BAD_REQUEST)
         
         totp = pyotp.TOTP(user.mfa_secret)
 
-        if totp.verify(code):
+        if totp.verify(code, valid_window=1):
+
             user.is_mfa_enabled = True
 
             user.save()
