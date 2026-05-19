@@ -6,23 +6,23 @@ from tenants.models import Tenant
 
 
 class PlanType(models.TextChoices):
-    BASE = 'BASE', 'Base'
-    PLUS = 'PLUS', 'Plus'
-    PRO = 'PRO', 'Pro'
+    BASE = 'base', 'Base'
+    PLUS = 'plus', 'Plus'
+    PRO = 'pro', 'Pro'
 
 
 class SubscriptionStatus(models.TextChoices):
-    ACTIVE = 'ACTIVE', 'Active'
-    PAST_DUE = 'PAST_DUE', 'Past Due'
-    CANCELLED = 'CANCELLED', 'Cancelled'
+    ACTIVE = 'active', 'Active'
+    PAST_DUE = 'past_due', 'Past Due'
+    CANCELLED = 'cancelled', 'Cancelled'
 
 
 class CurrentSubscription(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     tenant = models.OneToOneField(Tenant, on_delete=models.CASCADE)
-    plan = models.CharField(max_length=20, choices=PlanType.choices)
-    status = models.CharField(max_length=20, choices=SubscriptionStatus.choices)
+    plan = models.TextField(choices=PlanType.choices)
+    status = models.TextField(choices=SubscriptionStatus.choices)
 
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -35,8 +35,8 @@ class SubscriptionAuditLog(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     tenant = models.ForeignKey(Tenant, related_name='subscriptions', on_delete=models.CASCADE)
-    plan = models.CharField(max_length=20, choices=PlanType.choices)
-    status = models.CharField(max_length=20, choices=SubscriptionStatus.choices)
+    plan = models.TextField(choices=PlanType.choices)
+    status = models.TextField(choices=SubscriptionStatus.choices)
 
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -13,6 +13,7 @@ from rest_framework_simplejwt.exceptions import InvalidToken
 
 from django.contrib.auth import get_user_model
 
+from employees.models import Employee
 from accounts.serializers import RegistrationSerializer
 
 from .serializers import LoginSerializer
@@ -104,6 +105,10 @@ class LoginView(APIView):
 
         user = serializer.validated_data.get('user')
 
+        tenant = user.profile.tenant
+
+        subscription = getattr(tenant, 'currentsubscription', None)
+
 
         # MFA FLOW
 
@@ -123,9 +128,9 @@ class LoginView(APIView):
             'message': 'Successfully logged in!',
             'data': {
                 'user': user.profile.full_name,
-                'tenant': user.profile.tenant.name if user.profile.tenant else 'System',
-                'subdomain': user.profile.tenant.schema_name.replace('tenant_', '') if user.profile.tenant else 'admin',
-                'plan': user.profile.tenant.currentsubscription.plan
+                'tenant': tenant.name if tenant else 'System',
+                'subdomain': tenant.schema_name.replace('tenant_', '') if tenant else 'admin',
+                'plan': subscription.plan if subscription else "INTERNAL_DEVELOPMENT"
             },
             'tokens': {
                 'refresh': str(refresh),

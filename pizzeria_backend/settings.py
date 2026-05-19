@@ -33,6 +33,9 @@ ALLOWED_HOSTS = ['.localhost', '127.0.0.1', 'localhost']
 # DEFINING 'SHARED' AND 'TENANT' APPLICATIONS
 
 SHARED_APPS = [
+    'daphne',
+    'channels',
+
     'django_tenants',
 
     'django.contrib.contenttypes',
@@ -59,7 +62,8 @@ TENANT_APPS = [
     'django.contrib.auth',
     'django.contrib.admin',
 
-    'employees'
+    'employees',
+    'devices'
 ]
 
 INSTALLED_APPS = SHARED_APPS + [app for app in TENANT_APPS if app not in SHARED_APPS]
@@ -97,6 +101,8 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 # Allow credentials (cookies/MFA tokens) to pass through
 CORS_ALLOW_CREDENTIALS = True
 
+CORS_ALLOW_ALL_ORIGINS = True
+
 
 TEMPLATES = [
     {
@@ -115,6 +121,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'pizzeria_backend.wsgi.application'
 
+ASGI_APPLICATION = 'pizzeria_backend.asgi.application' # Enables the project to handle the ASGI data streams
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
@@ -217,3 +224,26 @@ TENANT_DOMAIN_MODEL = 'tenants.Domain'
 
 RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID')
 RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET')
+
+
+# EMAIL CONFIG.
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+
+# REDIS CONFIG.
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://*.localhost:5173",
+]
