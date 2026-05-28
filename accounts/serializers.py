@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from django.contrib.auth import get_user_model, authenticate
-from django.db import transaction, connection
+from django.db import transaction
 
 from django_tenants.utils import schema_context
 
@@ -71,7 +71,7 @@ class RegistrationSerializer(serializers.Serializer):
             ) # Tenant created
 
             Domain.objects.create(
-                domain=f"{subdomain}.localhost", # ?!
+                domain=f"{subdomain}.localhost",
                 tenant=tenant,
                 is_primary=True
             ) # Domain created

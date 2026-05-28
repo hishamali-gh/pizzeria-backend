@@ -33,7 +33,7 @@ ALLOWED_HOSTS = ['.localhost', '127.0.0.1', 'localhost']
 # DEFINING 'SHARED' AND 'TENANT' APPLICATIONS
 
 SHARED_APPS = [
-    'daphne',
+    'daphne', # WSGI Server
     'channels',
 
     'django_tenants',

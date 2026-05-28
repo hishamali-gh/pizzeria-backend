@@ -8,7 +8,6 @@ from django.utils import timezone
 
 
 class Role(models.TextChoices):
-    SUPERADMIN = 'superadmin', 'Super Admin'
     ADMIN = 'admin', 'Admin'
     WORKER = 'worker', 'Worker'
     VIEWER = 'viewer', 'Viewer'
