@@ -54,7 +54,9 @@ SHARED_APPS = [
 
     'accounts',
     'tenants',
-    'billing'
+    'billing',
+
+    'django_celery_beat'
 ]
 
 TENANT_APPS = [
@@ -229,6 +231,7 @@ RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET')
 # EMAIL CONFIG.
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'safety-interlock@vdcs-pizzeria.internal'
 
 
 # REDIS CONFIG.
@@ -247,3 +250,21 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://*.localhost:5173",
 ]
+
+
+# CELERY CONFIG.
+
+# Pointing to database index 1 so it doesn't conflict with Channels (usually on db=0)
+
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/1'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/1'
+
+
+# Timezone matching your standard localization
+
+CELERY_TIMEZONE = 'UTC'
+
+
+# Explicitly use django-celery-beat for handling our bimonthly checkups
+
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
