@@ -14,6 +14,7 @@ from rest_framework_simplejwt.exceptions import InvalidToken """
 from django_tenants.utils import schema_context
 
 from django.contrib.auth import get_user_model
+from django.db import connection
 
 from employees.models import Employee
 from accounts.serializers import RegistrationSerializer
@@ -250,9 +251,37 @@ class UserProfileAPIView(APIView):
         tenant = request.tenant # Set by the django-tenants middleware
 
         profile = getattr(user, 'profile', None)
-        employee = getattr(user, 'employee_profile', None)
+        user_tenant = profile.tenant if profile else None
 
-        role = employee.role if employee else ('superadmin' if user.is_superuser else 'viewer')
+        role = 'viewer' # Safe fallback
+
+
+        # 1. If we are running under a tenant schema, query relation directly
+
+        if connection.schema_name != 'public':
+            try:
+                role = user.employee_profile.role
+
+            except AttributeError:
+                pass
+
+
+        # 2. If we are on the public domain, but the user is associated with a tenant
+
+        elif user_tenant:
+            with schema_context(user_tenant.schema_name):
+                try:
+                    role = Employee.objects.get(user=user).role
+
+                except Employee.DoesNotExist:
+                    pass
+
+
+        # 3. If we are on the public domain and they are a superuser
+
+        else:
+            if user.is_superuser:
+                role = 'superadmin'
 
 
         return Response({
