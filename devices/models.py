@@ -19,6 +19,7 @@ class Device(models.Model):
     name = models.TextField()
     type = models.CharField(max_length=50, choices=DeviceType.choices)
     is_on = models.BooleanField(default=False)
+    setpoint = models.FloatField(default=0.0)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

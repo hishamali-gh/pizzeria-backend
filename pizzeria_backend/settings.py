@@ -14,15 +14,22 @@ from pathlib import Path
 
 import os
 
+import environ
+
+env = environ.Env()
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@$2ec3jcy*z4k6_#yu^9ywkge^hdz)x)gye!0f_azz0-b#(n2c'
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -128,11 +135,6 @@ ASGI_APPLICATION = 'pizzeria_backend.asgi.application' # Enables the project to 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-import environ
-
-env = environ.Env()
-
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 DATABASES = {
     'default': {
@@ -224,14 +226,38 @@ TENANT_DOMAIN_MODEL = 'tenants.Domain'
 
 # RAZORPAY CONFIG.
 
-RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID')
-RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET')
+RAZORPAY_KEY_ID = env('RAZORPAY_KEY_ID')
+RAZORPAY_KEY_SECRET = env('RAZORPAY_KEY_SECRET')
 
 
-# EMAIL CONFIG.
+# SMTP CONFIG.
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'safety-interlock@vdcs-pizzeria.internal'
+# Swap Django's internal compiler from 'console' to the native networking network handler
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+
+# Target mail server hostname and transmission gateway port
+
+EMAIL_HOST = env('EMAIL_HOST', 'smtp.sendgrid.net') # Default example
+EMAIL_PORT = env.int('EMAIL_PORT', 587) # TLS Port
+
+
+# Safety Handshaking (Strictly use TLS encryption layers)
+
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+
+
+# Authentication Access Handshake Keys
+
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', '')
+
+
+# Sender Label displayed to operators on the manufacturing floor
+
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
 
 
 # REDIS CONFIG.
