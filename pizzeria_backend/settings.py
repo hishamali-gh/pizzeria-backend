@@ -180,7 +180,7 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 # Allow credentials (cookies/MFA tokens) to pass through
 CORS_ALLOW_CREDENTIALS = True
 
-# CORS_ALLOW_ALL_ORIGINS = True # Temporary setup for debugging
+# CORS_ALLOW_ALL_ORIGINS = True # Temporary setup for quick debugging
 
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:5173',
@@ -225,11 +225,13 @@ RAZORPAY_KEY_SECRET = env('RAZORPAY_KEY_SECRET')
 
 
 # REDIS CONFIG.
+REDIS_URL = env('REDIS_URL')
+
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('127.0.0.1', 6379)],
+            'hosts': [REDIS_URL],
         },
     },
 }
@@ -237,8 +239,8 @@ CHANNEL_LAYERS = {
 
 # CELERY CONFIG.
 # Pointing to database index '1' so it doesn't conflict with Channels (usually on db=0)
-CELERY_BROKER_URL = 'redis://127.0.0.1:6379/1'
-CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/1'
+CELERY_BROKER_URL = f'{REDIS_URL}/1'
+CELERY_RESULT_BACKEND = f'{REDIS_URL}/1'
 
 # Timezone matching your standard localization
 CELERY_TIMEZONE = 'UTC'
