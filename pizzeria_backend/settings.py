@@ -7,13 +7,14 @@ from datetime import timedelta
 
 
 # ENVIRONMENT CONFIG.
-# Setting up 'env'
+# 1. Instantiate the parser tool
 env = environ.Env()
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+# 2. Dynamically find the absolute path of your project folder
+BASE_DIR = Path(__file__).resolve().parent.parent # Build paths inside the project like this: BASE_DIR / 'subdir'
 
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+# 3. Read and load the .env file into Python's execution memory
+environ.Env.read_env(os.path.join(BASE_DIR, '.env')) # Can also be written as 'env.read_only...'
 
 
 # CORE DJANGO APPLICATION CONFIG.
