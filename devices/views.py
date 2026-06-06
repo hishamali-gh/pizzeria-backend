@@ -18,6 +18,7 @@ class DeviceViewSet(ModelViewSet):
     serializer_class = DeviceSerializer
     queryset = Device.objects.all()
 
+
     @action(detail=True, methods=['patch'])
     def control(self, request, pk=None):
         device = self.get_object()
@@ -27,6 +28,9 @@ class DeviceViewSet(ModelViewSet):
 
         if new_status is not None:
             device.is_on = new_status
+
+        if new_val is not None:
+            device.setpoint = new_val
 
         device.save()
 
@@ -80,7 +84,24 @@ class TelemetryIngestionAPIView(APIView):
             }
         )
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        # 3. Calculate target deviations and command routing
+
+        command = None
+        device = data.device
+
+        if device.is_on and not is_on:
+            command = 'START'
+
+        elif not device.is_on and is_on:
+            command = 'SHUTDOWN'
+
+        response_data = serializer.data
+        response_data['command'] = command
+        response_data['target_value'] = device.setpoint
+
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class AlertViewSet(ReadOnlyModelViewSet):

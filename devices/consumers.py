@@ -22,3 +22,10 @@ class TelemetryConsumer(AsyncWebsocketConsumer):
             'value': event['value'],
             'status': event['status']
         }))
+
+    async def device_command(self, event):
+        """
+        No-op handler to absorb the control commands broadcast to this channel.
+        This prevents Django Channels from raising an AttributeError and killing the WebSocket.
+        """
+        pass
