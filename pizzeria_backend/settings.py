@@ -1,5 +1,6 @@
 import os
-import environ
+
+from dotenv import load_dotenv
 
 from pathlib import Path
 
@@ -7,20 +8,20 @@ from datetime import timedelta
 
 
 # ENVIRONMENT CONFIG.
-# 1. Instantiate the parser tool
-env = environ.Env()
+# We don't need 'django-environ' since we are using Docker as well.
+# The native method, 'os.environ.get' will work with the bi-flow setup.
+env = os.environ.get
 
-# 2. Dynamically find the absolute path of your project folder
-BASE_DIR = Path(__file__).resolve().parent.parent # Build paths inside the project like this: BASE_DIR / 'subdir'
-
-# 3. Read and load the .env file into Python's execution memory
-environ.Env.read_env(os.path.join(BASE_DIR, '.env')) # Can also be written as 'env.read_only...'
-
+# Load environment variables from the .env file in your project root
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'))
 
 # CORE DJANGO APPLICATION CONFIG.
 SECRET_KEY = env('SECRET_KEY')
 
-DEBUG = env.bool('DEBUG', default=False)
+if not SECRET_KEY:
+    raise ValueError("CRITICAL SECURITY ERROR: The SECRET_KEY environment variable is not set!")
+
+DEBUG = bool(env('DEBUG', default=False))
 
 ALLOWED_HOSTS = ['.localhost', '127.0.0.1', 'localhost']
 
@@ -114,11 +115,11 @@ TEMPLATES = [
 DATABASES = {
     'default': {
         'ENGINE': 'django_tenants.postgresql_backend',
-        'NAME': env('DB_NAME'),
-        'USER': env('DB_USER'),
-        'PASSWORD': env('DB_PASSWORD'),
-        'HOST': env('DB_HOST'),
-        'PORT': env('DB_PORT')
+        'NAME': env('DB_NAME', default='pizzeria_db'),
+        'USER': env('DB_USER', default='postgres'),
+        'PASSWORD': env('DB_PASSWORD', default='development_password'),
+        'HOST': env('DB_HOST', default='127.0.0.1'),
+        'PORT': env('DB_PORT', default='5432')
     }
 }
 
@@ -199,6 +200,10 @@ USE_TZ = True
 # STATIC FILES CONFIG.
 STATIC_URL = '/static/'
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 
 # EMAIL CONFIG.
 # Swaps Django's internal compiler from 'console' to the native networking network handler
@@ -206,7 +211,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 # Target mail server hostname and transmission gateway port
 EMAIL_HOST = env('EMAIL_HOST', default='smtp.sendgrid.net')
-EMAIL_PORT = env.int('EMAIL_PORT', default=587) # TLS Port
+EMAIL_PORT = int(env('EMAIL_PORT', default=587)) # TLS Port
 
 # Safety Handshaking (Strictly use TLS encryption layers)
 EMAIL_USE_TLS = True
@@ -217,16 +222,16 @@ EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
 
 # Sender Label displayed to operators on the manufacturing floor
-DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='pizzeria@localhost')
 
 
 # RAZORPAY CONFIG.
-RAZORPAY_KEY_ID = env('RAZORPAY_KEY_ID')
-RAZORPAY_KEY_SECRET = env('RAZORPAY_KEY_SECRET')
+RAZORPAY_KEY_ID = env('RAZORPAY_KEY_ID', default='')
+RAZORPAY_KEY_SECRET = env('RAZORPAY_KEY_SECRET', default='')
 
 
 # REDIS CONFIG.
-REDIS_URL = env('REDIS_URL')
+REDIS_URL = env('REDIS_URL', default='redis://127.0.0.1:6379/0')
 
 CHANNEL_LAYERS = {
     'default': {

@@ -1,30 +1,22 @@
-"""
-ASGI config for pizzeria_backend project.
+import os
 
-It exposes the ASGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/6.0/howto/deployment/asgi/
-"""
+import devices.routing
 
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 
 from django.core.asgi import get_asgi_application
 
-import devices.routing
 
-import os
-
+# Tell 'Daphne' where exactly 'settings.py' lives.
+""" 'setdefault()' method is used as a failsafe instead of direct assignment because, in production environments,
+a cloud system administrator might want to override your default configurations to use a production setup file instead """
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'pizzeria_backend.settings')
-
 
 application = ProtocolTypeRouter({
     'http': get_asgi_application(),
     'websocket': AuthMiddlewareStack(
-        URLRouter(
-            devices.routing.websocket_urlpatterns
-        )
+        URLRouter(devices.routing.websocket_urlpatterns)
     )
 })
