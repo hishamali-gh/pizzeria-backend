@@ -249,8 +249,11 @@ CHANNEL_LAYERS = {
 
 # CELERY CONFIG.
 # Pointing to database index '1' so it doesn't conflict with Channels (usually on db=0)
-CELERY_BROKER_URL = f'{REDIS_URL}/1'
-CELERY_RESULT_BACKEND = f'{REDIS_URL}/1'
+import re
+
+CELERY_BASE_REDIS_URL = re.sub(r'/\d+$', '', REDIS_URL)
+CELERY_BROKER_URL = f'{CELERY_BASE_REDIS_URL}/1'
+CELERY_RESULT_BACKEND = f'{CELERY_BASE_REDIS_URL}/1'
 
 # Timezone matching your standard localization
 CELERY_TIMEZONE = 'UTC'
