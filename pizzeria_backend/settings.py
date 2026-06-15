@@ -23,7 +23,7 @@ if not SECRET_KEY:
 
 DEBUG = bool(env('DEBUG', default=False))
 
-ALLOWED_HOSTS = ['.localhost', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['*']
 
 ROOT_URLCONF = 'pizzeria_backend.urls' # Private URLs
 PUBLIC_SCHEMA_URLCONF = 'pizzeria_backend.urls_public' # Public URLs
