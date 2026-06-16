@@ -174,7 +174,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:5173',
     'http://localhost', # Allow frontend on port 80
     'http://127.0.0.1', # Allow frontend on port 80
-    'https://pizzeria-vdcs-frontend.vercel.app/'
+    'https://pizzeria-vdcs-frontend.vercel.app'
 ]
 
 # Allow all subdomains
