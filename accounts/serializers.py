@@ -1,3 +1,5 @@
+import os
+
 from rest_framework import serializers
 
 from django.contrib.auth import get_user_model, authenticate
@@ -70,8 +72,10 @@ class RegistrationSerializer(serializers.Serializer):
                 schema_name=f"tenant_{subdomain}"
             ) # Tenant created
 
+            base_domain = os.environ.get('TENANT_BASE_DOMAIN', 'localhost')
+
             Domain.objects.create(
-                domain=f"{subdomain}.localhost",
+                domain=f"{subdomain}.{base_domain}",
                 tenant=tenant,
                 is_primary=True
             ) # Domain created
