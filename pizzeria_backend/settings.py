@@ -172,14 +172,16 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
-    'http://localhost',      # Allow frontend on port 80
-    'http://127.0.0.1',      # Allow frontend on port 80
+    'http://localhost', # Allow frontend on port 80
+    'http://127.0.0.1', # Allow frontend on port 80
+    'https://pizzeria-vdcs-frontend.vercel.app/'
 ]
 
 # Allow all subdomains
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r'^http://.*\.localhost:5173$',
     r'^http://.*\.localhost$', # Allow subdomains on port 80
+    r'^https://.*\.vercel\.app$'
 ]
 
 # Allow credentials (cookies/MFA tokens) to pass through
@@ -189,8 +191,10 @@ CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:5173',
     'http://*.localhost:5173',
-    'http://localhost',      # Trust port 80 for CSRF
-    'http://*.localhost',    # Trust subdomains on port 80 for CSRF
+    'http://localhost', # Trust port 80 for CSRF
+    'http://*.localhost', # Trust subdomains on port 80 for CSRF
+    'https://pizzeria-vdcs-frontend.vercel.app',
+    'https://*.vercel.app'
 ]
 
 
