@@ -25,6 +25,8 @@ jobs:
           pip install --prefer-binary -r requirements.txt
 
       - name: Run Django Configuration Check
+        env:
+          SECRET_KEY: "temporary-secret-key-only-used-for-ci-tests"
         run: |
           python manage.py check
 
