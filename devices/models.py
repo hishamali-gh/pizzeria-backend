@@ -57,6 +57,8 @@ class Alert(models.Model):
     threshold = models.FloatField()
     value = models.FloatField()
 
+    triggered_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, related_name='triggered_alerts', null=True, blank=True)
+
     is_acknowledged = models.BooleanField(default=False)
     acknowledged_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, related_name='acknowledged_alerts', null=True, blank=True)
     acknowledged_at = models.DateTimeField(null=True, blank=True)

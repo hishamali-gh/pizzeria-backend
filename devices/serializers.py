@@ -22,9 +22,22 @@ class TelemetryIngestionSerializer(serializers.ModelSerializer):
    
 
 class AlertModelSerializer(serializers.ModelSerializer):
+    triggered_by = serializers.StringRelatedField(read_only=True)
+    acknowledged_by = serializers.StringRelatedField(read_only=True)
+
+    device_id = serializers.SlugRelatedField(
+        source='device',
+        slug_field='device_id',
+        read_only=True
+    )
+
     class Meta:
         model = Alert
-        exclude = ['id', 'created_at']
+        fields = [
+            'id', 'device', 'device_id', 'type', 'threshold', 'value',
+            'is_acknowledged', 'acknowledged_by', 'acknowledged_at',
+            'triggered_by', 'created_at'
+        ]
         extra_kwargs = {
             'device': {'read_only': True},
             'type': {'read_only': True},

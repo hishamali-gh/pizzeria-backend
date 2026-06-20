@@ -26,11 +26,67 @@ class DeviceViewSet(ModelViewSet):
         new_val = request.data.get('last_value')
         new_status = request.data.get('is_on')
 
+        # Retrieve the employee model of the active user session
+        employee = None
+        if request.user.is_authenticated:
+            try:
+                from employees.models import Employee
+                employee = Employee.objects.get(user=request.user)
+            except Employee.DoesNotExist:
+                pass
+
         if new_status is not None:
             device.is_on = new_status
 
         if new_val is not None:
             device.setpoint = new_val
+
+            # Define safety thresholds per device type
+            THRESHOLDS = {
+                'oven': 450.0,
+                'conveyor': 0.8,
+                'pump': 15.0,
+            }
+
+            limit = THRESHOLDS.get(device.type)
+
+            if limit is not None:
+                if new_val > limit:
+                    alert_type = f"{device.type.upper()}_THRESHOLD_VIOLATION"
+                    
+                    # Log a new Alert if no active alert of this type is currently open for the device
+                    active_alert = Alert.objects.filter(
+                        device=device,
+                        type=alert_type,
+                        is_acknowledged=False
+                    ).exists()
+
+                    if not active_alert:
+                        Alert.objects.create(
+                            device=device,
+                            type=alert_type,
+                            threshold=limit,
+                            value=new_val,
+                            triggered_by=employee,
+                            is_acknowledged=False
+                        )
+                        
+                        # Queue async Celery email notifications to all tenant staff members
+                        from .tasks import send_tenant_panic_alert
+                        from django.db import connection
+                        send_tenant_panic_alert.delay(
+                            connection.schema_name,
+                            device.name,
+                            f"Setpoint of {new_val} exceeded the safety limit of {limit}"
+                        )
+                else:
+                    # If setpoint returned to safe limits, auto-acknowledge all active alerts
+                    active_alerts = Alert.objects.filter(
+                        device=device,
+                        is_acknowledged=False
+                    )
+                    for alert in active_alerts:
+                        alert.acknowledge(employee)
 
         device.save()
 
@@ -39,7 +95,7 @@ class DeviceViewSet(ModelViewSet):
         async_to_sync(channel_layer.group_send)(
             f"telemetry_{device.device_id}",
             {
-                "type": "device_command", # The simulator must listen for this type
+                "type": "device_command",
                 "value": new_val if new_val is not None else 0.0,
                 "is_on": device.is_on
             }
@@ -112,6 +168,14 @@ class AlertViewSet(ReadOnlyModelViewSet):
     def acknowledge(self, request, pk=None):
         alert = self.get_object()
         
-        alert.acknowledge(request.user)
+        employee = None
+        if request.user.is_authenticated:
+            try:
+                from employees.models import Employee
+                employee = Employee.objects.get(user=request.user)
+            except Employee.DoesNotExist:
+                pass
+
+        alert.acknowledge(employee)
 
         return Response({'status': 'alert acknowledged'})
